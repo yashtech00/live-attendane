@@ -1,5 +1,7 @@
 import {WebSocketServer} from "ws"
 import jwt from "jsonwebtoken"
+import { handleMessage } from "./wsHandler"
+
 export const initWebSocket = (server: any) => {
     const wss = new WebSocketServer({ server })
     

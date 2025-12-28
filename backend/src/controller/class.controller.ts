@@ -1,7 +1,5 @@
 import classModel from "../models/class.model"
-import userModel from "../models/user.model"
 import { classSchema } from "../validation/class.validation"
-import { createStudentSchema } from "../validation/student.validation"
 import { userSchema } from "../validation/user.validation"
 
 
@@ -59,43 +57,65 @@ export const createStudent = async (req:any,res:any) => {
 }
 
 export const getClassById = async (req: any, res: any) => {
-    try {
-        const classData = await classModel.findById(req.params.id)
-            .populate({
-                path: 'studentId',
-                select: 'name email' // only include the fields you need
-            })
-            .populate('teacherId', 'name email'); // also populate teacher if needed
+  try {
+    const userId = req.user.id;
+    const userRole = req.user.role;
 
-        if (!classData) {
-            return res.status(404).json({
-                message: "Class not found"
-            });
-        }
+    const classData = await classModel
+      .findById(req.params.id)
+      .populate({
+        path: "studentId",
+        select: "name email role"
+      })
+      .lean();
 
-        const response = {
-            success: true,
-            message: "Class found successfully",
-            data: {
-                _id: classData._id,
-                className: classData.className,
-                teacherId: classData.teacherId,
-                students: classData.studentId.map(student => ({
-                    _id: student._id,
-                    name: student.name,
-                    email: student.email
-                }))
-            }
-        };
-
-        return res.status(200).json(response);
-    } catch (e: any) {
-        console.error(e);
-        return res.status(500).json({
-            success: false,
-            message: e.message || "Internal server error"
-        });
+    if (!classData) {
+      return res.status(404).json({
+        success: false,
+        message: "Class not found"
+      });
     }
+
+    
+    const isTeacher =
+      userRole === "Teacher" &&
+      classData.teacherId.toString() === userId;
+
+    const isStudent =
+      userRole === "Student" &&
+      classData.studentId.some(
+        (s: any) => s._id.toString() === userId
+      );
+
+    if (!isTeacher && !isStudent) {
+      return res.status(403).json({
+        success: false,
+        message: "Forbidden"
+      });
+    }
+
+   
+    return res.status(200).json({
+      success: true,
+      data: {
+        _id: classData._id,
+        className: classData.className,
+        teacherId: classData.teacherId, 
+        students: classData.studentId.map((student: any) => ({
+          _id: student._id,
+          name: student.name,
+          email: student.email
+        }))
+      }
+    });
+
+  } catch (e: any) {
+    console.error(e);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error"
+    });
+  }
 };
 
 export const getAllStudents = async (req: any, res: any) => {
