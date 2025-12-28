@@ -21,6 +21,7 @@
     "@types/express": "^5.0.6",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/mongoose": "^5.11.96",
+    "@types/ws": "^8.18.1",
     "cors": "^2.8.5",
     "jsonwebtoken": "^9.0.3"
   }
